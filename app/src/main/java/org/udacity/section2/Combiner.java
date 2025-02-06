@@ -1,12 +1,12 @@
 package org.udacity.section2;
 
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.coders.DoubleCoder;
 import org.apache.beam.sdk.transforms.Combine;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.SimpleFunction;
 import org.apache.beam.sdk.values.PCollection;
-
 
 public class Combiner {
     static class AverageFn extends Combine.CombineFn<Double, AverageFn.Accumulator, Double> {
@@ -43,21 +43,27 @@ public class Combiner {
         }
     }
 
+    static class PrintAverage extends SimpleFunction<Double, Void> {
+        @Override
+        public Void apply(Double input) {
+            System.out.println("Average: " + input);
+            return null;
+        }
+    }
+
     public static void main(String[] args) {
-        Pipeline p = Pipeline.create();
+        Pipeline pipeline = Pipeline.create();
 
-        PCollection<Double> numbers = p.apply(Create.of(15.0, 5.0, 7.0, 7.0, 9.0, 23.0, 13.0, 5.0));
+        PCollection<Double> numbers = pipeline
+                .apply("Create Numbers", Create.of(15.0, 5.0, 7.0, 7.0, 9.0, 23.0, 13.0, 5.0))
+                .setCoder(DoubleCoder.of());
 
-        PCollection<Double> average = numbers.apply("Combine Globally", Combine.globally(new AverageFn()));
+        PCollection<Double> average = numbers
+                .apply("Combine Globally", Combine.globally(new AverageFn()).withoutDefaults())
+                .setCoder(DoubleCoder.of());
 
-        average.apply(MapElements.via(new SimpleFunction<Double, Void>() {
-            @Override
-            public Void apply(Double input) {
-                System.out.println(input);
-                return null;
-            }
-        }));
+        average.apply("Print Average", MapElements.via(new PrintAverage()));
 
-        p.run().waitUntilFinish();
+        pipeline.run().waitUntilFinish();
     }
 }
