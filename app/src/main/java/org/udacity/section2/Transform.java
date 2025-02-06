@@ -74,7 +74,7 @@ public class Transform {
                                 .collect(Collectors.toList())
                 ))  // No nested Create.of()
                 .apply("Write Results", TextIO.write().to(
-                        "data/outCreate4").withSuffix(".txt").withoutSharding()
+                        "data/outCreate").withSuffix(".txt").withoutSharding()
                 );
         // Run the pipeline
         p2.run().waitUntilFinish();
